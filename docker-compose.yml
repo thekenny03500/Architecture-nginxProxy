@@ -1,19 +1,53 @@
-version: '2'
+version: "2"
 
 services:
   nginx-proxy:
-    image: jwilder/nginx-proxy
-    ports:
-      - "80:80"
-    volumes:
-      - /var/run/docker.sock:/tmp/docker.sock:ro
+   image: jwilder/nginx-proxy
+   ports:
+    - "80:80"
+   networks:
+    - wpdbnet
+   volumes:
+    - /var/run/docker.sock:/tmp/docker.sock:ro
 
   apache-site-a:
    build: ./ApacheSite/siteA
    environment:
-    - VIRTUAL_HOST=sitea.local.training.ovh
+    - VIRTUAL_HOST=sitea.${DNSNAME}
 
   apache-site-b:
    build: ./ApacheSite/siteB
    environment:
-    - VIRTUAL_HOST=siteb.local.training.ovh
+    - VIRTUAL_HOST=siteb.${DNSNAME}
+
+  phpmyadmin:
+   image: phpmyadmin/phpmyadmin
+   networks:
+    - wpdbnet
+   links:
+    - "db:database"
+   environment:
+    - VIRTUAL_HOST=myawp.${DNSNAME}
+
+  db:
+   image: mysql
+   command: --default-authentication-plugin=mysql_native_password
+   networks:
+    - wpdbnet
+   environment:
+    - MYSQL_ROOT_PASSWORD=${DBPW}
+    
+  wp:
+   image: wordpress
+   networks: 
+    - wpdbnet
+   environment:
+    - WORDPRESS_DB_HOST=db
+    - WORDPRESS_DB_USER=${DBUSER}
+    - WORDPRESS_DB_PASSWORD=${DBPW}
+    - WORDPRESS_DB_NAME=wpdb
+    - VIRTUAL_HOST=wp.${DNSNAME}
+
+networks:
+  wpdbnet:
+   driver: bridge
