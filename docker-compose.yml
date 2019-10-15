@@ -1,0 +1,19 @@
+version: '2'
+
+services:
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+
+  apache-site-a:
+   build: ./ApacheSite/siteA
+   environment:
+    - VIRTUAL_HOST=sitea.local.training.ovh
+
+  apache-site-b:
+   build: ./ApacheSite/siteB
+   environment:
+    - VIRTUAL_HOST=siteb.local.training.ovh
