@@ -7,17 +7,25 @@ services:
     - "80:80"
    networks:
     - wpdbnet
+    - apachenet
+    - nginxlbnet
    volumes:
     - /var/run/docker.sock:/tmp/docker.sock:ro
 
   apache-site-a:
-   build: ./ApacheSite/siteA
+   build: ./ApacheSite
+   networks:
+    - apachenet
    environment:
+    - SITELIEN=siteA
     - VIRTUAL_HOST=sitea.${DNSNAME}
 
   apache-site-b:
-   build: ./ApacheSite/siteB
+   build: ./ApacheSite
+   networks:
+    - apachenet
    environment:
+    - SITELIEN=siteB
     - VIRTUAL_HOST=siteb.${DNSNAME}
 
   phpmyadmin:
@@ -48,6 +56,33 @@ services:
     - WORDPRESS_DB_NAME=wpdb
     - VIRTUAL_HOST=wp.${DNSNAME}
 
+  nginx-loadbalancer:
+   build: ./nginx-load-balance
+   networks:
+    - nginxlbnet
+   tty: true
+   links:
+    - nginx-site1
+    - nginx-site2
+   environment:
+    - VIRTUAL_HOST=sitec.${DNSNAME}
+
+  nginx-site1:
+   build: ./nginx-site/siteA
+   tty: true
+   networks:
+    - nginxlbnet
+
+  nginx-site2:
+   build: ./nginx-site/siteB
+   tty: true
+   networks:
+    - nginxlbnet
+
 networks:
   wpdbnet:
+   driver: bridge
+  apachenet:
+   driver: bridge
+  nginxlbnet:
    driver: bridge
